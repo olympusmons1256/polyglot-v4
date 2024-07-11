@@ -1,0 +1,390 @@
+Documentation from https://www.npmjs.com/package/@types/react
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@types/react - npm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+skip to:
+
+content
+
+package search
+
+sign in
+
+â¤
+
+Pro
+
+Teams
+
+Pricing
+
+Documentation
+
+npm
+
+Search
+
+Sign Up
+
+Sign In
+
+ 
+
+@types/react
+
+18.3.3
+
+Â â¢Â 
+
+Public
+
+Â â¢Â Published 
+
+2 months ago
+
+ Readme
+
+Code 
+
+Beta
+
+2 Dependencies
+
+18,838 Dependents
+
+596 Versions
+
+Installation
+
+
+
+
+
+
+
+npm install --save @types/react
+
+
+
+
+
+
+
+Summary
+
+
+
+
+This package contains type definitions for react (
+
+https://react.dev/
+
+).
+
+
+
+
+Details
+
+
+
+
+Files were exported from 
+
+https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react
+
+.
+
+
+
+
+Additional Details
+
+
+
+
+
+
+
+Last updated: Thu, 23 May 2024 20:07:44 GMT
+
+
+
+
+Dependencies: 
+
+@types/prop-types
+
+, 
+
+csstype
+
+
+
+
+
+
+
+
+
+
+Credits
+
+
+
+
+These definitions were written by 
+
+Asana
+
+, 
+
+AssureSign
+
+, 
+
+Microsoft
+
+, 
+
+John Reilly
+
+, 
+
+Benoit Benezech
+
+, 
+
+Patricio Zavolinsky
+
+, 
+
+Eric Anderson
+
+, 
+
+Dovydas Navickas
+
+, 
+
+Josh Rutherford
+
+, 
+
+Guilherme HÃ¼bner
+
+, 
+
+Ferdy Budhidharma
+
+, 
+
+Johann Rakotoharisoa
+
+, 
+
+Olivier Pascal
+
+, 
+
+Martin Hochel
+
+, 
+
+Frank Li
+
+, 
+
+Jessica Franco
+
+, 
+
+Saransh Kataria
+
+, 
+
+Kanitkorn Sujautra
+
+, 
+
+Sebastian Silbermann
+
+, 
+
+Kyle Scully
+
+, 
+
+Cong Zhang
+
+, 
+
+Dimitri Mitropoulos
+
+, 
+
+JongChan Choi
+
+, 
+
+Victor MagalhÃ£es
+
+, 
+
+Dale Tan
+
+, 
+
+Priyanshu Rav
+
+, 
+
+Dmitry Semigradsky
+
+, and 
+
+Matt Pocock
+
+.
+
+
+
+
+Readme
+
+Keywords
+
+none
+
+Package Sidebar
+
+Install
+
+npm i 
+
+@types/react
+
+Repository
+
+Git
+
+github.com/DefinitelyTyped/DefinitelyTyped
+
+Homepage
+
+github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react
+
+Downloads
+
+Weekly Downloads
+
+21,443,591
+
+Version
+
+18.3.3
+
+License
+
+MIT
+
+Unpacked Size
+
+437 kB
+
+Total Files
+
+17
+
+Last publish
+
+2 months ago
+
+Collaborators
+
+Try
+
+ on RunKit
+
+Report
+
+ malware
+
+ 
+
+Footer
+
+Support
+
+Help
+
+Advisories
+
+Status
+
+Contact npm
+
+Company
+
+About
+
+Blog
+
+Press
+
+Terms & Policies
+
+Policies
+
+Terms of Use
+
+Code of Conduct
+
+Privacy
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,945 @@
+Documentation from https://www.npmjs.com/package/@azure/msal-react
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@azure/msal-react - npm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+skip to:
+
+content
+
+package search
+
+sign in
+
+â¤
+
+Pro
+
+Teams
+
+Pricing
+
+Documentation
+
+npm
+
+Search
+
+Sign Up
+
+Sign In
+
+ 
+
+@azure/msal-react
+
+2.0.20
+
+Â â¢Â 
+
+Public
+
+Â â¢Â Published 
+
+9 days ago
+
+ Readme
+
+Code 
+
+Beta
+
+0 Dependencies
+
+101 Dependents
+
+77 Versions
+
+Microsoft Authentication Library for React (msal-react)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Getting Started
+
+
+
+
+AAD Docs
+
+
+
+
+Library Reference
+
+
+
+
+Samples
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+About
+
+
+
+
+FAQ
+
+
+
+
+Changelog
+
+
+
+
+Prerequisites
+
+
+
+
+Version Support
+
+
+
+
+Installation
+
+
+
+
+Build and Test
+
+
+
+
+
+
+
+Usage
+
+
+
+
+
+
+
+Getting Started
+
+
+
+
+Msal Basics
+
+
+
+
+Advanced Topics
+
+
+
+
+MSAL React Specific Concepts
+
+
+
+
+
+
+
+
+
+
+Samples
+
+
+
+
+Security Reporting
+
+
+
+
+License
+
+
+
+
+Code of Conduct
+
+
+
+
+
+
+
+About
+
+
+
+
+The MSAL library for JavaScript enables client-side JavaScript applications to authenticate users using 
+
+Azure AD
+
+ work and school accounts (AAD), Microsoft personal accounts (MSA) and social identity providers like Facebook, Google, LinkedIn, Microsoft accounts, etc. through 
+
+Azure AD B2C
+
+ service. It also enables your app to get tokens to access 
+
+Microsoft Cloud
+
+ services such as 
+
+Microsoft Graph
+
+.
+
+
+
+
+The 
+
+@azure/msal-react
+
+ package described by the code in this folder uses the 
+
+@azure/msal-browser
+
+ package
+
+ as a peer dependency to enable authentication in Javascript Single-Page Applications without backend servers. This version of the library uses the OAuth 2.0 Authorization Code Flow with PKCE. To read more about this protocol, as well as the differences between implicit flow and authorization code flow, see the section in the 
+
+@azure/msal-browser readme
+
+.
+
+
+
+
+Prerequisites
+
+
+
+
+
+
+
+
+
+
+@azure/msal-react
+
+ is meant to be used in 
+
+Single-Page Application scenarios
+
+.
+
+
+
+
+
+
+
+
+
+
+Before using 
+
+@azure/msal-react
+
+ you will need to 
+
+register a Single Page Application in Azure AD
+
+ to get a valid 
+
+clientId
+
+ for configuration, and to register the routes that your app will accept redirect traffic on.
+
+
+
+
+
+
+
+
+
+
+Version Support
+
+
+
+
+
+
+
+
+
+
+
+
+
+MSAL React version
+
+
+
+
+MSAL support status
+
+
+
+
+Supported React versions
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MSAL React v2
+
+
+
+
+Active development
+
+
+
+
+16, 17, 18
+
+
+
+
+
+
+
+
+
+
+MSAL React v1
+
+
+
+
+In maintenance
+
+
+
+
+16, 17, 18
+
+
+
+
+
+
+
+
+
+
+
+
+
+Note:
+
+ There have been no functional changes in the MSAL React v2 release.
+
+
+
+
+Installation
+
+
+
+
+The MSAL React package is available on NPM.
+
+
+
+
+npm install react react-dom
+npm install @azure/msal-react @azure/msal-browser
+
+
+
+
+Build and Test
+
+
+
+
+See the 
+
+contributing.md
+
+ file for more information.
+
+
+
+
+Building the package locally
+
+
+
+
+To build the 
+
+@azure/msal-react
+
+ library, you can do the following:
+
+
+
+
+// Install dev dependencies from root of repo
+npm install
+// Change to the msal-react package directory
+
+
+cd
+
+ lib/msal-react/
+// To run build only 
+
+for
+
+ react package
+npm run build
+
+
+
+
+To build both the 
+
+@azure/msal-react
+
+ library and 
+
+@azure/msal-browser
+
+ libraries, you can do the following:
+
+
+
+
+// Install dev dependencies from root of repo
+npm install
+// Change to the msal-react package directory
+
+
+cd
+
+ lib/msal-react/
+// To run build 
+
+for
+
+ react and browser packages
+npm run build:all
+
+
+
+
+Running Tests
+
+
+
+
+@azure/msal-react
+
+ uses 
+
+jest
+
+ to run unit tests and coverage.
+
+
+
+
+// To run tests
+npm 
+
+test
+
+
+// To run tests with code coverage
+npm run test:coverage
+
+
+
+
+Usage
+
+
+
+
+For help getting started with 
+
+@azure/msal-react
+
+ please see our 
+
+getting started
+
+ doc.
+
+
+
+
+Migrating from 
+
+react-aad-msal
+
+? Check out our 
+
+migration guide
+
+.
+
+
+
+
+MSAL Basics
+
+
+
+
+Since 
+
+@azure/msal-react
+
+ is a wrapper around 
+
+@azure/msal-browser
+
+ many docs from the 
+
+msal-browser
+
+ repo are relevant here as well. For concepts specific to 
+
+@azure/msal-react
+
+ please see 
+
+below
+
+
+
+
+
+
+
+Initialization
+
+
+
+
+Acquiring and using an access token
+
+
+
+
+Managing token lifetimes
+
+
+
+
+Managing Accounts
+
+
+
+
+Logging out
+
+
+
+
+
+
+
+Advanced Topics
+
+
+
+
+
+
+
+Configuration Options
+
+
+
+
+Request and Response Details
+
+
+
+
+Events
+
+
+
+
+Cache Storage
+
+
+
+
+Performance Enhancements
+
+
+
+
+
+
+
+MSAL React Specific Concepts
+
+
+
+
+
+
+
+Hooks
+
+
+
+
+Events
+
+
+
+
+Class Components
+
+
+
+
+Performance
+
+
+
+
+
+
+
+Samples
+
+
+
+
+Our 
+
+samples directory
+
+ contains several example apps you can spin up to see how this library can be used in different contexts.
+
+
+
+
+
+
+
+Create React App (JS) Sample
+
+
+
+
+Create React App (TS) Sample
+
+
+
+
+Next.js Sample
+
+
+
+
+Gatsby Sample
+
+
+
+
+B2C Sample
+
+
+
+
+
+
+
+More advanced samples backed with a tutorial can be found in the 
+
+Azure Samples
+
+ space on GitHub:
+
+
+
+
+
+
+
+React SPA calling Express.js web API
+
+
+
+
+React SPA calling Express.js web API using App Roles and RBAC
+
+
+
+
+React SPA calling Microsoft Graph via Express.js web API using on-behalf-of flow
+
+
+
+
+Deployment tutorial for Azure Static Web Apps
+
+
+
+
+
+
+
+Security Reporting
+
+
+
+
+If you find a security issue with our libraries or services please report it to 
+
+secure@microsoft.com
+
+ with as much detail as possible. Your submission may be eligible for a bounty through the 
+
+Microsoft Bounty
+
+ program. Please do not post security issues to GitHub Issues or any other public site. We will contact you shortly upon receiving the information. We encourage you to get notifications of when security incidents occur by visiting 
+
+this page
+
+ and subscribing to Security Advisory Alerts.
+
+
+
+
+License
+
+
+
+
+Copyright (c) Microsoft Corporation.  All rights reserved. Licensed under the MIT License.
+
+
+
+
+We Value and Adhere to the Microsoft Open Source Code of Conduct
+
+
+
+
+This project has adopted the 
+
+Microsoft Open Source Code of Conduct
+
+. For more information see the 
+
+Code of Conduct FAQ
+
+ or contact 
+
+opencode@microsoft.com
+
+ with any additional questions or comments.
+
+
+
+
+Readme
+
+Keywords
+
+none
+
+Package Sidebar
+
+Install
+
+npm i 
+
+@azure/msal-react
+
+Repository
+
+Git
+
+github.com/AzureAD/microsoft-authentication-library-for-js
+
+Homepage
+
+github.com/AzureAD/microsoft-authentication-library-for-js#readme
+
+Downloads
+
+Weekly Downloads
+
+335,587
+
+Version
+
+2.0.20
+
+License
+
+MIT
+
+Unpacked Size
+
+102 kB
+
+Total Files
+
+61
+
+Last publish
+
+9 days ago
+
+Collaborators
+
+Try
+
+ on RunKit
+
+Report
+
+ malware
+
+ 
+
+Footer
+
+Support
+
+Help
+
+Advisories
+
+Status
+
+Contact npm
+
+Company
+
+About
+
+Blog
+
+Press
+
+Terms & Policies
+
+Policies
+
+Terms of Use
+
+Code of Conduct
+
+Privacy
+
+
+
+
+
+
+
+
+
+
+
+
+
+

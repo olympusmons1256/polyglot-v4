@@ -1,0 +1,285 @@
+Documentation from https://www.npmjs.com/package/react-dnd-html5-backend
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+react-dnd-html5-backend - npm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+skip to:
+
+content
+
+package search
+
+sign in
+
+â¤
+
+Pro
+
+Teams
+
+Pricing
+
+Documentation
+
+npm
+
+Search
+
+Sign Up
+
+Sign In
+
+ 
+
+react-dnd-html5-backend
+
+16.0.1
+
+Â â¢Â 
+
+Public
+
+Â â¢Â Published 
+
+2 years ago
+
+ Readme
+
+Code 
+
+Beta
+
+1 Dependency
+
+3,085 Dependents
+
+79 Versions
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+React DnD HTML5 Backend
+
+
+
+
+The officially supported HTML5 backend for 
+
+React DnD
+
+.
+See 
+
+the docs
+
+ for usage information.
+
+
+
+
+
+
+
+Installation
+
+
+
+
+If you use 
+
+npm
+
+:
+
+
+
+
+npm install --save react-dnd-html5-backend
+
+
+
+
+
+
+
+
+Browser Support
+
+
+
+
+We strive to support the evergreen browsers.
+
+
+
+
+Unfortunately the browser bugs, inconsistencies, and regressions come up from time to time, so please make sure you test your app on the browsers youâre interested in, and report any bugs to us.
+
+
+
+
+
+
+
+License
+
+
+
+
+MIT
+
+
+
+
+Readme
+
+Keywords
+
+none
+
+Package Sidebar
+
+Install
+
+npm i 
+
+react-dnd-html5-backend
+
+Repository
+
+Git
+
+github.com/react-dnd/react-dnd
+
+Homepage
+
+github.com/react-dnd/react-dnd#readme
+
+Downloads
+
+Weekly Downloads
+
+1,679,300
+
+Version
+
+16.0.1
+
+License
+
+MIT
+
+Unpacked Size
+
+167 kB
+
+Total Files
+
+67
+
+Last publish
+
+2 years ago
+
+Collaborators
+
+Try
+
+ on RunKit
+
+Report
+
+ malware
+
+ 
+
+Footer
+
+Support
+
+Help
+
+Advisories
+
+Status
+
+Contact npm
+
+Company
+
+About
+
+Blog
+
+Press
+
+Terms & Policies
+
+Policies
+
+Terms of Use
+
+Code of Conduct
+
+Privacy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
