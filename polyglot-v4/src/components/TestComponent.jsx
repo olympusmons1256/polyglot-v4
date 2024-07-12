@@ -1,7 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
 
-const TestComponent = () => {
-  return <div>Test Component</div>;
-};
-
-export default TestComponent;
+export default function TestComponent() {
+  return (
+    <div>
+      <h1>Test Component</h1>
+    </div>
+  );
+}

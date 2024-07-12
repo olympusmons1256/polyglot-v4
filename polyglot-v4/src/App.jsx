@@ -1,16 +1,13 @@
-import React from 'react';
-import { Provider, defaultTheme } from '@adobe/react-spectrum';
-import { DragAndDrop } from '@react-spectrum/dnd';
-import BasicLayout from './components/BasicLayout';
+﻿import React from 'react';
+import MainContainer from './components/dashboard/MainContainer';
+import './App.css';
 
-const App = () => {
+function App() {
   return (
-    <Provider theme={defaultTheme} colorScheme="light">
-      <DragAndDrop>
-        <BasicLayout />
-      </DragAndDrop>
-    </Provider>
+    <div className="app">
+      <MainContainer />
+    </div>
   );
-};
+}
 
 export default App;

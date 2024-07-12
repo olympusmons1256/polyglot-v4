@@ -1,98 +1,70 @@
-import React, { useState, useMemo } from 'react';
-import { Flex, View, Text, Heading, ListView, Item, ActionButton } from '@adobe/react-spectrum';
-import DragHandle from '@spectrum-icons/workflow/DragHandle';
-import CheckmarkCircle from '@spectrum-icons/workflow/CheckmarkCircle';
-import { useDragAndDrop } from '@react-spectrum/dnd';
+﻿import React from 'react';
+import { useGridList, useGridListItem } from '@react-aria/gridlist';
+import { useListState } from '@react-stately/list';
+import { useFocusRing } from '@react-aria/focus';
+import { mergeProps } from '@react-aria/utils';
+import './LeftMenu.css';
 
-const MenuSection = ({ title, items, onItemSelected }) => {
-  const [dragState, setDragState] = useState([]);
+const menuItems = [
+  { id: '1', title: 'Dashboard', icon: '🏠' },
+  { id: '2', title: 'Languages', icon: '🌐' },
+  { id: '3', title: 'Practice', icon: '✏️' },
+  { id: '4', title: 'Progress', icon: '📊' },
+];
 
-  const { dragAndDropHooks } = useDragAndDrop({
-    getItems: (keys) => [...keys].map(key => ({ 'text/plain': items[key].text })),
-    onReorder: (e) => {
-      const newItems = [...items];
-      const draggedItem = newItems.splice(e.draggedKeys[0], 1)[0];
-      newItems.splice(e.insertIndex, 0, draggedItem);
-      setDragState(newItems);
-    },
-  });
-
-  const displayedItems = dragState.length > 0 ? dragState : items;
-
-  return (
-    <View marginY="size-200">
-      <Heading level={3}>{title}</Heading>
-      <ListView
-        items={displayedItems}
-              aria-label={`${title} menu items`}
-        dragAndDropHooks={dragAndDropHooks}
-        selectionMode="none"
-      >
-        {(item) => (
-          <Item key={item.id} textValue={item.text}>
-            <Flex alignItems="center" gap="size-100">
-              <DragHandle aria-label="Drag handle" />
-              <View backgroundColor="gray-200" padding="size-50" borderRadius="small">
-                <Text>{item.type}</Text>
-              </View>
-              <Text flex>{item.text}</Text>
-              <ActionButton
-                isQuiet
-                onPress={() => onItemSelected(item.id)}
-                aria-label={item.selected ? "Remove from canvas" : "Add to canvas"}
-              >
-                <CheckmarkCircle color={item.selected ? "green-500" : "gray-500"} />
-              </ActionButton>
-            </Flex>
-          </Item>
-        )}
-      </ListView>
-    </View>
+function GridListItem({ item, state }) {
+  let ref = React.useRef();
+  let { gridCellProps } = useGridListItem(
+    { node: item },
+    state,
+    ref
   );
-};
-
-const LeftMenu = () => {
-  const [sections, setSections] = useState({
-    Entity: [
-      { id: 'e1', text: 'Customers', type: 'entity', selected: false },
-      { id: 'e2', text: 'Products', type: 'entity', selected: false },
-      { id: 'e3', text: 'Orders', type: 'entity', selected: false },
-    ],
-    Layout: [
-      { id: 'l1', text: 'Grid', type: 'layout', selected: false },
-      { id: 'l2', text: 'List', type: 'layout', selected: false },
-      { id: 'l3', text: 'Card', type: 'layout', selected: false },
-    ],
-    People: [
-      { id: 'p1', text: 'Users', type: 'people', selected: false },
-      { id: 'p2', text: 'Groups', type: 'people', selected: false },
-      { id: 'p3', text: 'Roles', type: 'people', selected: false },
-    ],
-  });
-
-  const handleItemSelected = (sectionTitle, itemId) => {
-    setSections(prev => ({
-      ...prev,
-      [sectionTitle]: prev[sectionTitle].map(item => 
-        item.id === itemId ? { ...item, selected: !item.selected } : item
-      )
-    }));
-  };
+  let { isFocusVisible, focusProps } = useFocusRing();
 
   return (
-    <Flex direction="column" height="100%">
-      {Object.entries(sections).map(([title, items]) => (
-        <MenuSection 
-          key={title} 
-          title={title} 
-          items={items} 
-          onItemSelected={(itemId) => handleItemSelected(title, itemId)} 
-        />
-      ))}
-    </Flex>
+    <div
+      {...mergeProps(gridCellProps, focusProps)}
+      ref={ref}
+      className={`menu-item ${isFocusVisible ? 'focused-menu-item' : ''}`}
+    >
+      <span className="menu-item-icon" aria-hidden="true">{item.icon}</span>
+      <span className="menu-item-text">{item.title}</span>
+    </div>
+  );
+}
+
+const LeftMenu = ({ navigation }) => {
+  let state = useListState({
+    items: menuItems,
+    selectedKeys: new Set(['1']),
+  });
+  let listRef = React.useRef();
+  let { gridProps } = useGridList({
+    ...state,
+    'aria-label': 'Menu',
+    selectionMode: 'single',
+    onSelectionChange: (keys) => {
+      const selectedItem = menuItems.find(item => item.id === Array.from(keys)[0]);
+      if (selectedItem) {
+        navigation(selectedItem.title);
+      }
+    }
+  }, state, listRef);
+
+  return (
+    <div className="left-menu-container">
+      <h1 className="left-menu-title">Polyglot</h1>
+      <div {...gridProps} ref={listRef} className="left-menu-grid">
+        {[...state.collection].map((item) => (
+          <GridListItem
+            key={item.key}
+            item={item}
+            state={state}
+          />
+        ))}
+      </div>
+    </div>
   );
 };
 
 export default LeftMenu;
-
-
