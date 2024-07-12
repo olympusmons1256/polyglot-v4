@@ -1,0 +1,4 @@
+{
+    "name": "Polyglot v4 Development",
+    "postCreateCommand": "echo 'source /workspaces/polyglot-v4/.bashrc' >> ~/.bashrc"
+  }
