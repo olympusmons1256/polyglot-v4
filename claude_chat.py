@@ -76,7 +76,7 @@ class VectorNotebook:
     def close(self):
         self.conn.close()
 
-def generate_instruction(vector_notebook: VectorNotebook, user_input: str) -> str:
+def generate_instruction(vector_notebook: VectorNotebook, user_input: str, error_message: str = None) -> str:
     relevant_entries = vector_notebook.get_relevant_entries(user_input)
     instruction = f"Refer to the project at {GITHUB_REPO_URL}. "
     instruction += "Based on the following context and the current query, provide assistance:\n\n"
@@ -85,6 +85,8 @@ def generate_instruction(vector_notebook: VectorNotebook, user_input: str) -> st
         instruction += f"Content: {entry['content']}\n"
         instruction += f"Tags: {', '.join(entry['tags'])}\n\n"
     instruction += f"Current query: {user_input}\n"
+    if error_message:
+        instruction += f"\nError message: {error_message}\n"
     instruction += "\nIf you suggest code changes, please format your response as follows:\n"
     instruction += "1. Explain the changes.\n"
     instruction += "2. Specify the file path like this: File: `path/to/file.ext`\n"
@@ -164,7 +166,8 @@ def extract_code_and_file_path(response: str) -> List[Tuple[str, str, str]]:
     code_block_patterns = [
         r"```[\w]*\n([\s\S]*?)```",
         r"~~~[\w]*\n([\s\S]*?)~~~",
-        r"<code>([\s\S]*?)</code>"
+        r"<code>([\s\S]*?)</code>",
+        r"((?:^|\n)[\w\s]+\([^)]*\)\s*{[^}]*})"
     ]
     
     file_path_patterns = [
@@ -188,8 +191,10 @@ def extract_code_and_file_path(response: str) -> List[Tuple[str, str, str]]:
     commit_messages = re.findall(commit_message_pattern, response)
     
     if not code_blocks:
-        potential_code = re.findall(r"((?:^|\n)[\w\s]+\([^)]*\)\s*{[^}]*})", response)
-        code_blocks.extend(potential_code)
+        indented_block_pattern = r"(?m)^( {4}|\t).*$"
+        indented_blocks = re.findall(indented_block_pattern, response, re.MULTILINE)
+        if indented_blocks:
+            code_blocks.append("\n".join(indented_blocks))
     
     results = []
     for i, code in enumerate(code_blocks):
@@ -214,6 +219,17 @@ def extract_deletions(response: str) -> Tuple[List[str], str]:
     commit_message = commit_messages[-1] if commit_messages else None
     
     return [d.strip() for d in deletions], commit_message
+
+def extract_error_message(response: str) -> str:
+    error_pattern = r"Error:|Failed to|Exception:"
+    error_match = re.search(error_pattern, response, re.IGNORECASE)
+    if error_match:
+        error_start = error_match.start()
+        error_end = response.find("\n\n", error_start)
+        if error_end == -1:
+            error_end = len(response)
+        return response[error_start:error_end].strip()
+    return None
 
 def delete_file_or_folder(path: str) -> None:
     try:
@@ -326,7 +342,8 @@ def claude_chat():
             vector_notebook.close()
             return
         
-        instruction = generate_instruction(vector_notebook, user_input)
+        error_message = extract_error_message(user_input)
+        instruction = generate_instruction(vector_notebook, user_input, error_message)
         
         if turn_counter % CONTEXT_CHECK_INTERVAL == 0:
             instruction += "\nReminder: Please check the provided conversation history for relevant context before responding."
@@ -347,7 +364,10 @@ def claude_chat():
             for code, file_path, commit_message in code_file_pairs:
                 handle_code_changes(code, file_path, commit_message)
         elif not deletions:
-            print("\nNo code changes or deletions detected in Claude's response.")
+            print("\nNo specific code changes or deletions detected in Claude's response.")
+            print("Claude's response may contain general advice or explanations.")
+            print("Here's a summary of Claude's response:")
+            print(response[:500] + "..." if len(response) > 500 else response)
         
         turn_counter += 1
 
