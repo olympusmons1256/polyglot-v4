@@ -10,6 +10,8 @@ from datetime import datetime
 from typing import List, Dict, Tuple
 import subprocess
 import re
+import sys
+import shutil
 
 # Constants
 API_KEY = os.getenv('CLAUDE_API_KEY')
@@ -17,35 +19,6 @@ API_URL = "https://api.anthropic.com/v1/messages"
 GITHUB_REPO_URL = "https://github.com/olympusmons1256/polyglot-v4"
 DB_PATH = "conversation_notebook.db"
 CONTEXT_CHECK_INTERVAL = 3  # Number of turns before reminding Claude to check history
-
-class ProjectContext:
-    def __init__(self, project_name):
-        self.project_name = project_name
-        self.history_file = f"{project_name}_history.json"
-        self.history = self.load_history()
-        self.connected_projects = set()
-
-    def load_history(self):
-        try:
-            with open(self.history_file, 'r') as f:
-                return json.load(f)
-        except FileNotFoundError:
-            return []
-
-    def save_history(self):
-        with open(self.history_file, 'w') as f:
-            json.dump(self.history, f)
-
-    def add_entry(self, entry):
-        self.history.append(entry)
-        self.save_history()
-
-    def connect_project(self, other_project):
-        self.connected_projects.add(other_project)
-
-    def get_relevant_history(self, query, n=5):
-        # TODO: Implement more sophisticated relevance scoring
-        return self.history[-n:]
 
 class VectorNotebook:
     def __init__(self):
@@ -103,19 +76,24 @@ class VectorNotebook:
     def close(self):
         self.conn.close()
 
-def generate_instruction(project_context: ProjectContext, user_input: str) -> str:
-    relevant_history = project_context.get_relevant_history(user_input)
+def generate_instruction(vector_notebook: VectorNotebook, user_input: str) -> str:
+    relevant_entries = vector_notebook.get_relevant_entries(user_input)
     instruction = f"Refer to the project at {GITHUB_REPO_URL}. "
     instruction += "Based on the following context and the current query, provide assistance:\n\n"
-    for entry in relevant_history:
-        instruction += f"Previous interaction:\n"
-        instruction += f"User: {entry['user']}\n"
-        instruction += f"Claude: {entry['claude']}\n\n"
+    for entry in relevant_entries:
+        instruction += f"Previous interaction (Relevance: {entry['similarity']:.2f}):\n"
+        instruction += f"Content: {entry['content']}\n"
+        instruction += f"Tags: {', '.join(entry['tags'])}\n\n"
     instruction += f"Current query: {user_input}\n"
     instruction += "\nIf you suggest code changes, please format your response as follows:\n"
     instruction += "1. Explain the changes.\n"
     instruction += "2. Specify the file path like this: File: `path/to/file.ext`\n"
     instruction += "3. Provide the complete updated code wrapped in triple backticks.\n"
+    instruction += "4. Suggest a commit message prefixed with 'Commit: '\n"
+    instruction += "\nIf you suggest deleting files or folders, please format your response as follows:\n"
+    instruction += "1. Explain the deletions.\n"
+    instruction += "2. List each file or folder to be deleted, prefixed with 'Delete: '\n"
+    instruction += "3. Suggest a commit message prefixed with 'Commit: '\n"
     return instruction
 
 def ask_claude(prompt: str, conversation_history: List[Dict[str, str]] = []) -> str:
@@ -128,13 +106,25 @@ def ask_claude(prompt: str, conversation_history: List[Dict[str, str]] = []) -> 
     data = {
         "model": "claude-3-sonnet-20240229",
         "max_tokens": 4096,
-        "messages": conversation_history + [{"role": "user", "content": prompt}]
+        "messages": conversation_history + [{"role": "user", "content": prompt}],
+        "stream": True
     }
     
     try:
-        response = requests.post(API_URL, json=data, headers=headers)
-        response.raise_for_status()
-        return response.json()['content'][0]['text']
+        with requests.post(API_URL, json=data, headers=headers, stream=True) as response:
+            response.raise_for_status()
+            full_response = ""
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode('utf-8')
+                    if decoded_line.startswith('data: '):
+                        content = json.loads(decoded_line[6:])
+                        if 'completion' in content:
+                            chunk = content['completion']
+                            full_response += chunk
+                            print(chunk, end='', flush=True)
+            print()  # Print a newline at the end
+            return full_response
     except requests.RequestException as e:
         return f"Error: {e}"
 
@@ -158,7 +148,6 @@ def git_push(file_path: str, commit_message: str) -> str:
         return f"Error pushing to repository: {str(e)}"
 
 def update_file(file_path: str, new_content: str) -> None:
-    # Ensure the directory exists
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -171,15 +160,13 @@ def update_file(file_path: str, new_content: str) -> None:
     except IOError as e:
         print(f"Error writing to file: {e}")
 
-def extract_code_and_file_path(response: str) -> List[Tuple[str, str]]:
-    # Multiple code block patterns
+def extract_code_and_file_path(response: str) -> List[Tuple[str, str, str]]:
     code_block_patterns = [
-        r"```[\w]*\n([\s\S]*?)```",  # Standard markdown
-        r"~~~[\w]*\n([\s\S]*?)~~~",  # Alternative markdown
-        r"<code>([\s\S]*?)</code>"   # HTML code tags
+        r"```[\w]*\n([\s\S]*?)```",
+        r"~~~[\w]*\n([\s\S]*?)~~~",
+        r"<code>([\s\S]*?)</code>"
     ]
     
-    # Expanded file path patterns
     file_path_patterns = [
         r"File:?\s*[`\"'](.*?)[`\"']",
         r"File path:?\s*[`\"'](.*?)[`\"']",
@@ -187,6 +174,8 @@ def extract_code_and_file_path(response: str) -> List[Tuple[str, str]]:
         r"Update\s+[`\"'](.*?)[`\"']",
         r"Modify\s+[`\"'](.*?)[`\"']"
     ]
+    
+    commit_message_pattern = r"Commit:\s*(.*)"
     
     code_blocks = []
     for pattern in code_block_patterns:
@@ -196,31 +185,136 @@ def extract_code_and_file_path(response: str) -> List[Tuple[str, str]]:
     for pattern in file_path_patterns:
         file_paths.extend(re.findall(pattern, response))
     
-    # Contextual code extraction (fallback)
+    commit_messages = re.findall(commit_message_pattern, response)
+    
     if not code_blocks:
         potential_code = re.findall(r"((?:^|\n)[\w\s]+\([^)]*\)\s*{[^}]*})", response)
         code_blocks.extend(potential_code)
     
-    # Combine code blocks and file paths
     results = []
     for i, code in enumerate(code_blocks):
         file_path = file_paths[i] if i < len(file_paths) else None
-        results.append((code.strip(), file_path))
+        commit_message = commit_messages[i] if i < len(commit_messages) else None
+        results.append((code.strip(), file_path, commit_message))
     
     print("Debugging extract_code_and_file_path:")
     print(f"Code blocks found: {len(code_blocks)}")
     print(f"File paths found: {len(file_paths)}")
+    print(f"Commit messages found: {len(commit_messages)}")
     
     return results
+
+def extract_deletions(response: str) -> Tuple[List[str], str]:
+    deletion_pattern = r"Delete:\s*([^\n]+)"
+    commit_message_pattern = r"Commit:\s*(.*)"
+    
+    deletions = re.findall(deletion_pattern, response)
+    commit_messages = re.findall(commit_message_pattern, response)
+    
+    commit_message = commit_messages[-1] if commit_messages else None
+    
+    return [d.strip() for d in deletions], commit_message
+
+def delete_file_or_folder(path: str) -> None:
+    try:
+        if os.path.isfile(path):
+            os.remove(path)
+            print(f"Deleted file: {path}")
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
+            print(f"Deleted folder: {path}")
+        else:
+            print(f"Path not found: {path}")
+    except Exception as e:
+        print(f"Error deleting {path}: {str(e)}")
+
+def verify_git_push(file_path: str) -> bool:
+    try:
+        subprocess.run(['git', 'fetch', 'origin'], check=True, capture_output=True, text=True)
+        local_hash = subprocess.run(['git', 'log', '-n', '1', '--pretty=format:%H', '--', file_path], 
+                                    check=True, capture_output=True, text=True).stdout.strip()
+        result = subprocess.run(['git', 'branch', '-r', '--contains', local_hash], 
+                                check=True, capture_output=True, text=True)
+        return 'origin/' in result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"Error verifying git push: {e}")
+        return False
+
+def handle_deletions(deletions: List[str], delete_commit_message: str) -> None:
+    print("\nClaude has suggested deleting the following files/folders:")
+    for i, item in enumerate(deletions, 1):
+        print(f"{i}. {item}")
+    
+    if delete_commit_message:
+        print(f"\nSuggested commit message: {delete_commit_message}")
+    
+    confirm = input("\nDo you want to proceed with these deletions? (y/n): ").lower()
+    if confirm == 'y':
+        for item in deletions:
+            confirm_item = input(f"Delete {item}? (y/n): ").lower()
+            if confirm_item == 'y':
+                delete_file_or_folder(item)
+        
+        if delete_commit_message:
+            use_suggested_message = input("Use the suggested commit message? (y/n): ").lower()
+            if use_suggested_message != 'y':
+                delete_commit_message = input("Enter commit message: ")
+        
+        result = git_push('.', delete_commit_message)
+        print(result)
+
+def handle_code_changes(code: str, file_path: str, commit_message: str) -> None:
+    print("\n" + "="*50)
+    print("Code change detected!")
+    if file_path:
+        print(f"File: {file_path}")
+    else:
+        print("File path not detected. Please provide the file path:")
+        file_path = input().strip()
+    print("Suggested code:")
+    print(code)
+    if commit_message:
+        print(f"\nSuggested commit message: {commit_message}")
+    print("="*50)
+    
+    user_choice = input("\nDo you want to apply these changes? (y/n): ").lower()
+    if user_choice == 'y':
+        try:
+            update_file(file_path, code)
+            print(f"Changes applied to {file_path}")
+            
+            push_choice = input("Do you want to push these changes to git? (y/n): ").lower()
+            if push_choice == 'y':
+                if commit_message:
+                    use_suggested_message = input("Use the suggested commit message? (y/n): ").lower()
+                    if use_suggested_message != 'y':
+                        commit_message = input("Enter commit message: ")
+                else:
+                    commit_message = input("Enter commit message: ")
+                
+                result = git_push(file_path, commit_message)
+                print(result)
+                
+                if verify_git_push(file_path):
+                    print("Changes successfully pushed and verified on remote repository.")
+                else:
+                    print("Warning: Changes may not have been pushed to the remote repository.")
+                    print("Please check your GitHub repository to confirm.")
+            else:
+                print("Changes applied locally but not pushed to git.")
+        except Exception as e:
+            print(f"Error applying changes: {e}")
+            print("Changes were not applied.")
+    else:
+        print("Changes not applied.")
 
 def claude_chat():
     print("Enter project name:")
     project_name = input().strip()
-    project_context = ProjectContext(project_name)
+    vector_notebook = VectorNotebook()
     
     print(f"Welcome to Claude Chat for project: {project_name}")
     print("Type 'exit' to end the conversation.")
-    print("Type 'connect <project_name>' to connect to another project's context.")
     print("To input multi-line messages or code blocks, use '###' on a new line to finish your input.")
     
     turn_counter = 0
@@ -229,60 +323,31 @@ def claude_chat():
         
         if user_input.lower().strip() == 'exit':
             print("Goodbye!")
+            vector_notebook.close()
             return
         
-        if user_input.lower().startswith('connect '):
-            other_project = user_input.split(maxsplit=1)[1]
-            project_context.connect_project(other_project)
-            print(f"Connected to project: {other_project}")
-            continue
-        
-        instruction = generate_instruction(project_context, user_input)
+        instruction = generate_instruction(vector_notebook, user_input)
         
         if turn_counter % CONTEXT_CHECK_INTERVAL == 0:
             instruction += "\nReminder: Please check the provided conversation history for relevant context before responding."
         
+        print("\nClaude: ", end='', flush=True)
         response = ask_claude(instruction)
-        print(f"\nClaude: {response}")
+        print()  # Print a newline after the response
         
-        project_context.add_entry({"user": user_input, "claude": response})
+        vector_notebook.add_entry(user_input, ["user_query"])
+        vector_notebook.add_entry(response, ["claude_response"])
         
-        # Check if the response contains code rewrite suggestions
+        deletions, delete_commit_message = extract_deletions(response)
+        if deletions:
+            handle_deletions(deletions, delete_commit_message)
+        
         code_file_pairs = extract_code_and_file_path(response)
         if code_file_pairs:
-            for code, file_path in code_file_pairs:
-                print("\n" + "="*50)
-                print("Code change detected!")
-                if file_path:
-                    print(f"File: {file_path}")
-                else:
-                    print("File path not detected. Please provide the file path:")
-                    file_path = input().strip()
-                print("Suggested code:")
-                print(code)
-                print("="*50)
-                
-                user_choice = input("\nDo you want to apply these changes? (y/n): ").lower()
-                if user_choice == 'y':
-                    try:
-                        update_file(file_path, code)
-                        print(f"Changes applied to {file_path}")
-                        
-                        push_choice = input("Do you want to push these changes to git? (y/n): ").lower()
-                        if push_choice == 'y':
-                            commit_message = input("Enter commit message: ")
-                            result = git_push(file_path, commit_message)
-                            print(result)
-                        else:
-                            print("Changes applied locally but not pushed to git.")
-                    except Exception as e:
-                        print(f"Error applying changes: {e}")
-                        print("Changes were not applied.")
-                else:
-                    print("Changes not applied.")
-        else:
-            print("\nNo code changes detected in Claude's response.")
-
+            for code, file_path, commit_message in code_file_pairs:
+                handle_code_changes(code, file_path, commit_message)
+        elif not deletions:
+            print("\nNo code changes or deletions detected in Claude's response.")
         
         turn_counter += 1
 
