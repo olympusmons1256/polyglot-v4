@@ -1,0 +1,8 @@
+export const getUserProfile = async () => {
+  // Fetch user profile data from API
+  // Return user profile data
+  return {
+    username: 'johndoe',
+    email: 'johndoe@example.com',
+  };
+};
