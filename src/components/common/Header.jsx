@@ -1,0 +1,24 @@
+src/
+  components/
+    common/
+      Header.jsx
+      Footer.jsx
+    auth/
+      LoginForm.jsx
+      RegistrationForm.jsx
+    dashboard/
+      SideMenu.jsx
+      CanvasArea.jsx
+      InputModule.jsx
+    profile/
+      UserProfile.jsx
+    protected-route/
+      ProtectedRoute.jsx
+  utils/
+    auth.js
+    api.js
+  styles/
+    global.css
+    components.css
+  App.jsx
+  main.jsx
