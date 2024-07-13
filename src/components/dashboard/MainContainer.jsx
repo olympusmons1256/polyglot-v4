@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import LeftMenu from "../LeftMenu";
-import "../MainContainer.css"; // Updated import path
+import "./MainContainer.css"; // Import the CSS file from the same directory
 
 export default function MainContainer() {
   const navigate = useNavigate();
