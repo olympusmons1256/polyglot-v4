@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import List, Dict, Tuple
 import subprocess
 import re
-import sys
 import shutil
 
 # Constants
@@ -19,6 +18,11 @@ API_URL = "https://api.anthropic.com/v1/messages"
 GITHUB_REPO_URL = "https://github.com/olympusmons1256/polyglot-v4"
 DB_PATH = "conversation_notebook.db"
 CONTEXT_CHECK_INTERVAL = 3  # Number of turns before reminding Claude to check history
+
+print(f"API Key found: {'Yes' if API_KEY else 'No'}")
+
+if not API_KEY:
+    raise ValueError("CLAUDE_API_KEY environment variable is not set. Please set it and try again.")
 
 class VectorNotebook:
     def __init__(self):
@@ -109,26 +113,19 @@ def ask_claude(prompt: str, conversation_history: List[Dict[str, str]] = []) -> 
         "model": "claude-3-sonnet-20240229",
         "max_tokens": 4096,
         "messages": conversation_history + [{"role": "user", "content": prompt}],
-        "stream": True
+        "stream": False
     }
     
     try:
-        with requests.post(API_URL, json=data, headers=headers, stream=True) as response:
-            response.raise_for_status()
-            full_response = ""
-            for line in response.iter_lines():
-                if line:
-                    decoded_line = line.decode('utf-8')
-                    if decoded_line.startswith('data: '):
-                        content = json.loads(decoded_line[6:])
-                        if 'completion' in content:
-                            chunk = content['completion']
-                            full_response += chunk
-                            print(chunk, end='', flush=True)
-            print()  # Print a newline at the end
-            return full_response
+        response = requests.post(API_URL, json=data, headers=headers)
+        response.raise_for_status()
+        content = response.json()
+        if 'content' in content and len(content['content']) > 0:
+            return content['content'][0]['text']
+        else:
+            return "No content received from Claude."
     except requests.RequestException as e:
-        return f"Error: {e}"
+        return f"Error in API request: {e}"
 
 def get_multi_line_input() -> str:
     print("Enter your message (type '###' on a new line to finish):")
@@ -201,11 +198,6 @@ def extract_code_and_file_path(response: str) -> List[Tuple[str, str, str]]:
         file_path = file_paths[i] if i < len(file_paths) else None
         commit_message = commit_messages[i] if i < len(commit_messages) else None
         results.append((code.strip(), file_path, commit_message))
-    
-    print("Debugging extract_code_and_file_path:")
-    print(f"Code blocks found: {len(code_blocks)}")
-    print(f"File paths found: {len(file_paths)}")
-    print(f"Commit messages found: {len(commit_messages)}")
     
     return results
 
@@ -288,7 +280,9 @@ def handle_code_changes(code: str, file_path: str, commit_message: str) -> None:
         print("File path not detected. Please provide the file path:")
         file_path = input().strip()
     print("Suggested code:")
+    print("-" * 40)
     print(code)
+    print("-" * 40)
     if commit_message:
         print(f"\nSuggested commit message: {commit_message}")
     print("="*50)
@@ -348,10 +342,10 @@ def claude_chat():
         if turn_counter % CONTEXT_CHECK_INTERVAL == 0:
             instruction += "\nReminder: Please check the provided conversation history for relevant context before responding."
         
-        print("\nClaude: ", end='', flush=True)
+        print("\nClaude: ")
         response = ask_claude(instruction)
-        print()  # Print a newline after the response
-        
+        print(response)  # Print the full response
+
         vector_notebook.add_entry(user_input, ["user_query"])
         vector_notebook.add_entry(response, ["claude_response"])
         
@@ -365,9 +359,6 @@ def claude_chat():
                 handle_code_changes(code, file_path, commit_message)
         elif not deletions:
             print("\nNo specific code changes or deletions detected in Claude's response.")
-            print("Claude's response may contain general advice or explanations.")
-            print("Here's a summary of Claude's response:")
-            print(response[:500] + "..." if len(response) > 500 else response)
         
         turn_counter += 1
 
